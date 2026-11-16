@@ -152,3 +152,25 @@ def advance(minutes: float) -> None:
     from datetime import timedelta
     from rationguard import clock
     clock._fixed = clock._fixed + timedelta(minutes=minutes)
+
+
+def sql(db_path: Path, statement: str, params: tuple = ()) -> list[tuple]:
+    """Run raw SQL on the file, the way an insider (or a checking test) would."""
+    connection = sqlite3.connect(db_path)
+    rows = connection.execute(statement, params).fetchall()
+    connection.commit()
+    connection.close()
+    return rows
+
+
+def propose(admin, hh_code: str, field: str, value, reason: str = "documented family change"):
+    return admin.post("/admin/changes", data={"csrf_token": csrf(admin), "hh_code": hh_code,
+                                              "field": field, "new_value": str(value), "reason": reason})
+
+
+def decide(admin, request_id: int, action: str = "approve"):
+    return admin.post(f"/admin/changes/{request_id}/{action}", data={"csrf_token": csrf(admin)})
+
+
+def kinds(items) -> list[str]:
+    return [item.kind for item in items]

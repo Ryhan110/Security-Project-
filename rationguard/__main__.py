@@ -3,6 +3,7 @@
   init-db            create tables and append-only triggers
   seed               load fictional demo data
   verify             re-check every HMAC, both chains and the anchors
+  alerts             list fraud and insider-threat alerts
   anchor             sign the current chain heads now
   set-role USER ROLE change a user's role (audit-logged, raises an alert)
   serve              start the web app on http://127.0.0.1:8000
@@ -29,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     verify_parser.add_argument("--json", action="store_true", help="machine-readable output")
     verify_parser.add_argument("--no-colour", action="store_true")
     sub.add_parser("anchor")
+    sub.add_parser("alerts")
     role_parser = sub.add_parser("set-role")
     role_parser.add_argument("username")
     role_parser.add_argument("role")
@@ -93,6 +95,18 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(format_report(report, colour=not args.no_colour and sys.stdout.isatty()))
         return 0 if report.ok else 1     # exit code 1 = tampering found
+
+    if args.command == "alerts":
+        from .detection import compute_alerts
+        from .verify import run_verification
+        with new_session() as db:
+            found = compute_alerts(db, run_verification(db))
+        for alert in found:
+            print(f"  [{alert.severity:<8}] {alert.kind}: {alert.title}")
+            if alert.detail:
+                print(f"             {alert.detail}")
+        print(f"{len(found)} alert(s).")
+        return 0
 
     if args.command == "serve":
         import uvicorn

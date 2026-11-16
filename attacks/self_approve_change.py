@@ -37,7 +37,7 @@ def run(db_path=None, hh_code: str = "HH-000101", new_quota: int = 60,
     connection.commit()
     say("Edited the database: the request now claims admin2 proposed it.")
     second = client.post(f"/admin/changes/{request_id}/approve", data={"csrf_token": token})
-    say(f"Try 2: admin1 approves the doctored request              HTTP {second.status_code} "
+    say(f"Try 2: admin1 approves the doctored request      HTTP {second.status_code} "
         "(blocked: the request row failed its HMAC check)")
 
     quota_after = connection.execute(

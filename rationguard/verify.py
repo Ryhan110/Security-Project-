@@ -274,7 +274,8 @@ class _Run:
                     "anchors", LOG_TAMPERED, f"audit entry #{anchor['audit_seq']}",
                     f"Audit log history was REWRITTEN: anchor #{anchor['anchor_no']} (signed "
                     f"{anchor['created_at'][:19]}) recorded a different hash for audit entry "
-                    f"#{anchor['audit_seq']}."))
+                    f"#{anchor['audit_seq']}. Entries were rewritten, or the log was cut short "
+                    "and newer entries were then written over the gap."))
                 break
         for anchor in good:
             row = self.tx_by_seq.get(anchor["tx_seq"])
@@ -290,8 +291,10 @@ class _Run:
             newest = good[-1]
             last_seq = max(self.audit_by_seq) if self.audit_by_seq else 0
             if last_seq < newest["audit_seq"]:
+                missing = (f"audit entry #{last_seq + 1}" if last_seq + 1 == newest["audit_seq"]
+                           else f"audit entries #{last_seq + 1} to #{newest['audit_seq']}")
                 self.add(check, Finding(
-                    "anchors", LOG_TRUNCATED, f"audit entries #{last_seq + 1} to #{newest['audit_seq']}",
+                    "anchors", LOG_TRUNCATED, missing,
                     f"Audit log was TRUNCATED: anchor #{newest['anchor_no']} (signed "
                     f"{newest['created_at'][:19]}) proves the log reached entry #{newest['audit_seq']}, "
                     f"but it now ends at #{last_seq}. The newest entries were deleted, or an old "
