@@ -1,0 +1,4 @@
+# Only used by the optional hosted demo: tells Vercel which FastAPI object to serve.
+# Python packages are still installed from requirements.txt.
+[tool.vercel]
+entrypoint = "vercel_entry:app"

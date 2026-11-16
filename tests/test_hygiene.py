@@ -82,7 +82,7 @@ def test_hosted_entry_point_boots_on_an_empty_disk(tmp_path, monkeypatch):
     monkeypatch.setenv("RG_ANCHOR_FILE", str(tmp_path / "hosted.jsonl"))
     get_settings.cache_clear()
     db.reset_engine()
-    spec = importlib.util.spec_from_file_location("vercel_entry", ROOT / "api" / "index.py")
+    spec = importlib.util.spec_from_file_location("vercel_entry", ROOT / "vercel_entry.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     browser = TestClient(module.app, follow_redirects=False)

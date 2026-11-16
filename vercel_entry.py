@@ -1,5 +1,7 @@
 """Entry point for the hosted demo on Vercel.
 
+pyproject.toml tells Vercel to serve `app` from this file.
+
 Vercel runs the app as a short-lived "serverless function": there is no
 permanent disk, only a temporary /tmp folder that is wiped whenever a fresh
 copy of the function starts. So this file:
@@ -14,7 +16,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 os.environ.setdefault("RG_DB_PATH", "/tmp/rationguard.db")
 os.environ.setdefault("RG_ANCHOR_FILE", "/tmp/anchors.jsonl")

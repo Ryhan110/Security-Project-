@@ -143,7 +143,7 @@ Steps:
 3. Open **Environment Variables**, click **Import .env** and choose `.env.vercel`.
 4. Click **Deploy**.
 
-`api/index.py` is the entry point, `vercel.json` sends every URL to it, and `.vercelignore` keeps tests, attack scripts and local secrets out of the upload. For the viva, use the local demo.
+`vercel_entry.py` is the entry point (named in `pyproject.toml`), and `.vercelignore` keeps tests, attack scripts and local secrets out of the upload. For the viva, use the local demo.
 
 ## Architecture
 
@@ -214,7 +214,7 @@ flowchart LR
 | `rationguard/verify.py` | Verification engine |
 | `rationguard/detection.py` | Fraud rules and insider alerts |
 | `rationguard/app.py` | Routes |
-| `api/index.py`, `vercel.json` | Entry point for the optional hosted demo |
+| `vercel_entry.py`, `pyproject.toml` | Entry point for the optional hosted demo |
 | `attacks/` | Attack simulator |
 | `tests/` | Security tests |
 
