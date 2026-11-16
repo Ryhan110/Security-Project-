@@ -112,7 +112,7 @@ python -m rationguard anchor
 python -m pytest
 ```
 
-184 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
+185 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
 
 - `tests/test_attacks.py` – every attack script has a test proving it is detected or blocked, including the exact field diff.
 - `tests/test_rbac.py` – every role against every route (60 cases), plus a test that **fails if any route has no permission check**.

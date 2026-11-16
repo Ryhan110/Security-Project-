@@ -1,4 +1,21 @@
-# Only used by the optional hosted demo: tells Vercel which FastAPI object to serve.
-# Python packages are still installed from requirements.txt.
+# Used by the optional hosted demo on Vercel.
+# When this file exists Vercel installs packages from HERE and ignores
+# requirements.txt, so the runtime packages are listed in both places
+# (a test checks the two lists stay in step).
+[project]
+name = "rationguard"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "sqlalchemy>=2.0",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "argon2-cffi>=23.1",
+    "cryptography>=42",
+    "python-dotenv>=1.0",
+]
+
+# Tells Vercel which FastAPI object to serve.
 [tool.vercel]
 entrypoint = "vercel_entry:app"

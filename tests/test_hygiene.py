@@ -93,3 +93,12 @@ def test_hosted_entry_point_boots_on_an_empty_disk(tmp_path, monkeypatch):
     db.reset_engine()
     monkeypatch.undo()
     get_settings.cache_clear()
+
+
+def test_pyproject_and_requirements_list_the_same_runtime_packages():
+    import tomllib
+    hosted = set(tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["dependencies"])
+    local = set((ROOT / "requirements.txt").read_text().split())
+    assert hosted <= local, f"in pyproject.toml but not requirements.txt: {hosted - local}"
+    dev_only = {line.split(">=")[0] for line in local - hosted}
+    assert dev_only == {"pytest", "httpx", "uvicorn"}
