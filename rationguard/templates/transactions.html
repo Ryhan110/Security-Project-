@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>All transactions <span class="muted">newest 200</span></h1>
+<table>
+  <tr><th>Seq</th><th>Date (UTC)</th><th>Household</th><th>Shop</th><th>Dealer</th><th>Commodity</th><th>Quantity</th><th>HMAC</th></tr>
+  {% for row in transactions %}
+  <tr><td>{{ row.tx.seq }}</td><td>{{ row.tx.created_at[:19] }}</td><td><a href="/households/{{ row.hh_code }}/history">{{ row.hh }}</a></td>
+      <td>{{ row.tx.shop_id }}</td><td>{{ row.tx.dealer_id }}</td><td>{{ row.tx.commodity }}</td><td>{{ row.tx.quantity_kg }} kg</td>
+      <td><code>{{ row.tx.hmac[:10] }}&hellip;</code></td></tr>
+  {% else %}<tr><td colspan="8" class="muted">None yet.</td></tr>{% endfor %}
+</table>
+{% endblock %}

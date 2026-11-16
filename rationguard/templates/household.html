@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Household {{ household.hh_code }}</h1>
+<table>
+  <tr><th>Head of household</th><td>{{ household.head_name }}</td></tr>
+  <tr><th>Address</th><td>{{ household.address }}</td></tr>
+  <tr><th>Phone</th><td>{{ household.phone }}</td></tr>
+  <tr><th>Family size</th><td>{{ household.family_size }}</td></tr>
+  <tr><th>Shop</th><td>{{ household.shop }}</td></tr>
+  <tr><th>Rice quota</th><td>{{ household.quota_rice_kg }} kg / month</td></tr>
+  <tr><th>Wheat quota</th><td>{{ household.quota_wheat_kg }} kg / month</td></tr>
+  <tr><th>Sugar quota</th><td>{{ household.quota_sugar_kg }} kg / month</td></tr>
+  <tr><th>Record version</th><td>{{ household.version }}</td></tr>
+</table>
+{% if user.role == "admin" %}
+<h2>Propose a change</h2>
+<p class="muted">Nothing changes until a <em>different</em> admin approves it (two-person rule).</p>
+<form method="post" action="/admin/changes" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="hh_code" value="{{ household.hh_code }}">
+  <label>Field
+    <select name="field">{% for f in fields %}<option value="{{ f }}">{{ f }}</option>{% endfor %}</select>
+  </label>
+  <label>New value <input name="new_value" type="number" min="0" required></label>
+  <label>Reason <input name="reason" required minlength="5" maxlength="300"></label>
+  <button type="submit">Propose</button>
+</form>
+<p class="muted">Shops: {% for s in shops %}{{ s.id }} = {{ s.code }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
+{% endblock %}

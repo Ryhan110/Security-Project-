@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Issue rations {% if shop %}<span class="muted">{{ shop.code }} {{ shop.name }}</span>{% endif %}</h1>
+<form method="post" action="/transactions" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+  <label>Household ID (from the ration card) <input name="hh_code" placeholder="HH-000101" required maxlength="20"></label>
+  <label>Commodity
+    <select name="commodity">{% for c in commodities %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select>
+  </label>
+  <label>Quantity (whole kg) <input name="quantity_kg" type="number" min="1" max="100" required></label>
+  <button type="submit">Record transaction</button>
+</form>
+<h2>Recent transactions at this shop</h2>
+<table>
+  <tr><th>Seq</th><th>Date (UTC)</th><th>Household</th><th>Commodity</th><th>Quantity</th></tr>
+  {% for row in transactions %}
+  <tr><td>{{ row.tx.seq }}</td><td>{{ row.tx.created_at[:19] }}</td><td>{{ row.hh }}</td><td>{{ row.tx.commodity }}</td><td>{{ row.tx.quantity_kg }} kg</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">None yet.</td></tr>{% endfor %}
+</table>
+{% endblock %}

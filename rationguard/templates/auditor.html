@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Auditor dashboard</h1>
+<form method="post" action="/auditor/verify" class="inline">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit">Run verification and record it in the audit log</button>
+</form>
+{% if recorded %}<p class="banner good">Verification run recorded in the audit log.</p>{% endif %}
+
+<h2>Integrity verification
+  {% if report.ok %}<span class="tag good">ALL GREEN</span>{% else %}<span class="tag bad">TAMPERING DETECTED</span>{% endif %}
+</h2>
+<table>
+  <tr><th>Check</th><th>Records checked</th><th>Failures</th><th>Result</th></tr>
+  {% for c in report.checks %}
+  <tr><td>{{ c.name }}</td><td>{{ c.checked }}</td><td>{{ c.failures }}</td>
+      <td>{% if c.failures == 0 %}<span class="tag good">PASS</span>{% else %}<span class="tag bad">FAIL</span>{% endif %}</td></tr>
+  {% endfor %}
+</table>
+<p class="muted">{{ anchors }} signed anchor(s) on file. Run at {{ report.started_at[:19] }} UTC.</p>
+
+{% if report.findings %}
+<h2>Findings</h2>
+{% for f in report.findings %}
+<div class="card finding">
+  <p><span class="tag bad">{{ f.kind }}</span> <strong>{{ f.record }}</strong></p>
+  <p>{{ f.message }}</p>
+  {% if f.changes %}
+  <table>
+    <tr><th>Field</th><th>Original value</th><th>Value now</th></tr>
+    {% for ch in f.changes %}<tr><td>{{ ch.field }}</td><td>{{ ch.original }}</td><td>{{ ch.current }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+  {% if f.evidence %}<p class="muted">{{ f.evidence }}</p>{% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+<h2>Alerts ({{ alerts|length }})</h2>
+<table>
+  <tr><th>Severity</th><th>Type</th><th>When (UTC)</th><th>What</th></tr>
+  {% for a in alerts %}
+  <tr><td><span class="tag sev-{{ a.severity|lower }}">{{ a.severity }}</span></td><td>{{ a.kind }}</td><td>{{ a.when[:19] }}</td>
+      <td>{{ a.title }}{% if a.detail %}<br><span class="muted">{{ a.detail }}</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4" class="muted">No alerts.</td></tr>{% endfor %}
+</table>
+{% endblock %}

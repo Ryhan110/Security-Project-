@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Distribution history: {{ household.hh_code }}</h1>
+{% if household.head_name %}<p>Head of household: {{ household.head_name }}</p>{% endif %}
+<p>Family size: {{ household.family_size }}</p>
+<h2>This month ({{ month }})</h2>
+<table>
+  <tr><th>Commodity</th><th>Issued</th><th>Monthly quota</th></tr>
+  {% for q in quotas %}<tr><td>{{ q.commodity }}</td><td>{{ q.used }} kg</td><td>{{ q.quota }} kg</td></tr>{% endfor %}
+</table>
+<h2>Transactions</h2>
+<table>
+  <tr><th>Seq</th><th>Date (UTC)</th><th>Month</th><th>Commodity</th><th>Quantity</th></tr>
+  {% for tx in transactions %}
+  <tr><td>{{ tx.seq }}</td><td>{{ tx.created_at[:19] }}</td><td>{{ tx.entitlement_month }}</td><td>{{ tx.commodity }}</td><td>{{ tx.quantity_kg }} kg</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">No transactions yet.</td></tr>{% endfor %}
+</table>
+{% endblock %}

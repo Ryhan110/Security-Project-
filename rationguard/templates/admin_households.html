@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Households</h1>
+<p class="muted">IDs are masked in this list. Opening a record is logged.</p>
+<table>
+  <tr><th>Household</th><th>Family size</th><th>Shop</th><th></th></tr>
+  {% for h in households %}
+  <tr><td>{{ h.masked }}</td><td>{{ h.family_size }}</td><td>{{ h.shop_id }}</td><td><a href="/households/{{ h.hh_code }}">Open</a></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

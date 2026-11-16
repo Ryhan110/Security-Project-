@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Change requests</h1>
+<p class="muted">Maker-checker: the admin who proposed a change cannot approve it.</p>
+<table>
+  <tr><th>#</th><th>Household</th><th>Field</th><th>From</th><th>To</th><th>Reason</th><th>Proposed by</th><th>Status</th><th></th></tr>
+  {% for c in changes %}
+  <tr>
+    <td>{{ c.r.id }}</td><td>{{ c.household }}</td><td>{{ c.r.field }}</td><td>{{ c.r.old_value }}</td><td>{{ c.r.new_value }}</td>
+    <td>{{ c.r.reason }}</td><td>{{ c.proposer }}</td>
+    <td>{{ c.r.status }}{% if c.decider %} by {{ c.decider }}{% endif %}</td>
+    <td>
+      {% if user.role == "admin" and c.r.status == "PENDING" %}
+      <form method="post" action="/admin/changes/{{ c.r.id }}/approve" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" {% if c.mine %}title="You proposed this; the server will refuse"{% endif %}>Approve</button>
+      </form>
+      <form method="post" action="/admin/changes/{{ c.r.id }}/reject" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">Reject</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="9" class="muted">No change requests.</td></tr>{% endfor %}
+</table>
+{% endblock %}

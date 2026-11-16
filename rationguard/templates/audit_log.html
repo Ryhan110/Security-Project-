@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Audit log <span class="muted">newest 200 entries</span></h1>
+<table class="small">
+  <tr><th>#</th><th>When (UTC)</th><th>Who</th><th>Role</th><th>Action</th><th>Object</th><th>IP</th><th>Before</th><th>After</th><th>Hash</th></tr>
+  {% for e in entries %}
+  <tr><td>{{ e.seq }}</td><td>{{ e.ts[:19] }}</td><td>{{ e.actor_username }}</td><td>{{ e.actor_role }}</td><td>{{ e.action }}</td>
+      <td>{{ e.object_type }} {{ e.object_id }}</td><td>{{ e.ip }}</td><td><code>{{ e.before_json }}</code></td><td><code>{{ e.after_json }}</code></td>
+      <td><code>{{ e.entry_hash[:10] }}&hellip;</code></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
