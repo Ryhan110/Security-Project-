@@ -1,0 +1,34 @@
+# --- Secrets: these must NEVER be committed ---
+.env
+.env.*
+!.env.example
+keys/
+*.pem
+*.key
+
+# --- Runtime data (database, anchors, logs) ---
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+anchors/
+*.anchors.jsonl
+logs/
+*.log
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+.DS_Store
