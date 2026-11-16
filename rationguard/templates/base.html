@@ -24,6 +24,7 @@
   {% endif %}
 </header>
 <main>
+  {% if demo_banner %}<p class="banner warn">{{ demo_banner }}</p>{% endif %}
   {% if error %}<p class="banner bad">{{ error }}</p>{% endif %}
   {% if message %}<p class="banner good">{{ message }}</p>{% endif %}
   {% block content %}{% endblock %}

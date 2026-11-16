@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-from .config import get_settings
+from .config import get_settings, signing_key_pem
 
 GENESIS_HASH = "0" * 64  # "previous hash" of the very first record in a chain
 
@@ -90,7 +90,7 @@ def decrypt(ciphertext: str) -> str:
 # Ed25519 signatures (used for anchors)
 # --------------------------------------------------------------------------
 def sign(message: bytes) -> str:
-    pem = get_settings().signing_private_key.read_bytes()
+    pem = signing_key_pem("private")
     key = serialization.load_pem_private_key(pem, password=None)
     assert isinstance(key, Ed25519PrivateKey)
     return key.sign(message).hex()
@@ -99,7 +99,7 @@ def sign(message: bytes) -> str:
 def signature_ok(message: bytes, signature_hex: str) -> bool:
     """Needs only the PUBLIC key. An auditor can check anchors without ever
     holding a secret, which is why anchors use signatures and not HMAC."""
-    pem = get_settings().signing_public_key.read_bytes()
+    pem = signing_key_pem("public")
     key = serialization.load_pem_public_key(pem)
     assert isinstance(key, Ed25519PublicKey)
     try:

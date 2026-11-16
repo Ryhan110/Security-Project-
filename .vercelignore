@@ -1,0 +1,11 @@
+.env
+.env.*
+keys/
+anchors/
+*.db
+.venv/
+tests/
+attacks/
+.pytest_cache/
+__pycache__/
+.github/

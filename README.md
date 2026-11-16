@@ -112,12 +112,38 @@ python -m rationguard anchor
 python -m pytest
 ```
 
-183 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
+184 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
 
 - `tests/test_attacks.py` – every attack script has a test proving it is detected or blocked, including the exact field diff.
 - `tests/test_rbac.py` – every role against every route (60 cases), plus a test that **fails if any route has no permission check**.
 - `tests/test_auth.py` – Argon2, lockout, rate limit, cookie flags, CSRF, session fixation.
 - `tests/test_hygiene.py` – nothing secret is tracked by git; the app refuses placeholder keys.
+
+## Hosted demo on Vercel (optional, limited)
+
+The project can be put online on Vercel so people can click around, but it is a **reduced** version. Vercel runs the app as a short-lived serverless function with no permanent disk, and this project is built around a database *file*.
+
+| On your laptop | On Vercel |
+|---|---|
+| Data stays until you delete it | Database lives in `/tmp` and is re-seeded whenever a fresh copy of the function starts |
+| Attack scripts edit the file | No access to the file, so the insider-attack demo cannot run |
+| One process | Vercel may run several copies, each with its own database, so you can occasionally be logged out or see different data |
+| Rate limit per visitor address | All visitors share Vercel's proxy address, so the login rate limit is shared |
+
+Steps:
+
+1. Generate a separate set of secrets for the hosted copy:
+
+   ```bash
+   python scripts/vercel_env.py
+   ```
+
+   This writes `.env.vercel` (git-ignored) and prints the login password for the hosted demo users.
+2. On vercel.com choose **Add New → Project**, import this GitHub repository, and leave the build settings at their defaults.
+3. Open **Environment Variables**, click **Import .env** and choose `.env.vercel`.
+4. Click **Deploy**.
+
+`api/index.py` is the entry point, `vercel.json` sends every URL to it, and `.vercelignore` keeps tests, attack scripts and local secrets out of the upload. For the viva, use the local demo.
 
 ## Architecture
 
@@ -188,6 +214,7 @@ flowchart LR
 | `rationguard/verify.py` | Verification engine |
 | `rationguard/detection.py` | Fraud rules and insider alerts |
 | `rationguard/app.py` | Routes |
+| `api/index.py`, `vercel.json` | Entry point for the optional hosted demo |
 | `attacks/` | Attack simulator |
 | `tests/` | Security tests |
 

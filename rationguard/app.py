@@ -5,6 +5,7 @@ Rule for this file: EVERY route either appears in PUBLIC_PATHS or has
 """
 from __future__ import annotations
 
+import os
 import secrets
 from pathlib import Path
 
@@ -32,6 +33,8 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 # autoescape is on for .html templates: user-supplied text is shown as text,
 # never run as HTML/JavaScript (prevents XSS).
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+# Optional notice shown on every page (used by the hosted demo).
+templates.env.globals["demo_banner"] = os.environ.get("RG_DEMO_BANNER", "")
 
 
 async def csrf_protect(request: Request) -> None:

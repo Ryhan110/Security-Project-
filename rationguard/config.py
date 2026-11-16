@@ -7,6 +7,7 @@ that does not run.
 """
 from __future__ import annotations
 
+import base64
 import os
 from dataclasses import dataclass
 from functools import lru_cache
@@ -85,6 +86,23 @@ def get_settings() -> Settings:
         business_end_hour=int(os.environ.get("RG_BUSINESS_END_HOUR", "22")),
         tz_offset_minutes=int(os.environ.get("RG_TZ_OFFSET_MINUTES", "330")),
     )
+
+
+def signing_key_pem(which: str) -> bytes:
+    """Return the Ed25519 key ('private' or 'public') as PEM bytes.
+
+    Normally it is read from the file in keys/. Serverless hosts have no place
+    to keep a private file, so there the PEM is supplied base64-encoded in an
+    environment variable (the host's encrypted secret store) instead.
+    """
+    encoded = os.environ.get(f"RG_SIGNING_{which.upper()}_KEY_B64", "")
+    if encoded:
+        return base64.b64decode(encoded)
+    settings = get_settings()
+    path = settings.signing_private_key if which == "private" else settings.signing_public_key
+    if not path.exists():
+        raise ConfigError(f"Signing key {path} not found. Run `python scripts/setup_keys.py`.")
+    return path.read_bytes()
 
 
 def seed_password() -> str:

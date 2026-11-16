@@ -62,3 +62,34 @@ def test_three_hmac_keys_are_different():
     from rationguard.config import get_settings
     settings = get_settings()
     assert len({settings.tx_hmac_key, settings.audit_hmac_key, settings.record_hmac_key}) == 3
+
+
+def test_hosted_entry_point_boots_on_an_empty_disk(tmp_path, monkeypatch):
+    """The Vercel entry point must create and seed its own database, with the
+    signing keys coming from environment variables instead of files."""
+    import base64
+    import importlib.util
+    import os
+    from pathlib import Path as P
+    from fastapi.testclient import TestClient
+    from rationguard import db
+    from rationguard.config import get_settings
+    for which in ("PRIVATE", "PUBLIC"):
+        pem = P(os.environ[f"RG_SIGNING_{which}_KEY"]).read_bytes()
+        monkeypatch.setenv(f"RG_SIGNING_{which}_KEY_B64", base64.b64encode(pem).decode())
+        monkeypatch.setenv(f"RG_SIGNING_{which}_KEY", str(tmp_path / "missing.pem"))
+    monkeypatch.setenv("RG_DB_PATH", str(tmp_path / "hosted.db"))
+    monkeypatch.setenv("RG_ANCHOR_FILE", str(tmp_path / "hosted.jsonl"))
+    get_settings.cache_clear()
+    db.reset_engine()
+    spec = importlib.util.spec_from_file_location("vercel_entry", ROOT / "api" / "index.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    browser = TestClient(module.app, follow_redirects=False)
+    assert browser.get("/login").status_code == 200
+    from conftest import login, verify
+    assert login(browser, "auditor1").status_code == 303
+    assert verify().ok
+    db.reset_engine()
+    monkeypatch.undo()
+    get_settings.cache_clear()

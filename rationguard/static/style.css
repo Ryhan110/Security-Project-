@@ -22,3 +22,4 @@ form.inline { display:inline; }
 .tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; color:#fff; }
 .tag.good { background:var(--good); } .tag.bad, .tag.sev-critical { background:var(--bad); }
 .tag.sev-high { background:var(--warn); } .tag.sev-medium { background:#8a6d00; } .tag.sev-low { background:var(--muted); }
+.banner.warn { background:#fff4e5; color:var(--warn); }
