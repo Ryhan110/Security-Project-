@@ -336,7 +336,7 @@ def _auditor_page(request: Request, user: User, db: Session, recorded: bool = Fa
     severity_counts = {level: sum(a.severity == level for a in alerts)
                        for level in ("CRITICAL", "HIGH", "MEDIUM", "LOW")}
     return render(request, "auditor.html", user, report=report, alerts=alerts, recorded=recorded,
-                  anchors=len(audit.read_anchors()), severity_counts=severity_counts)
+                  anchors=len(audit.read_anchors(db)), severity_counts=severity_counts)
 
 
 @app.get("/auditor", response_class=HTMLResponse)

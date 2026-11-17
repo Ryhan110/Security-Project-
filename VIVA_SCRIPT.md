@@ -57,7 +57,7 @@ Show `THREAT_MODEL.md` briefly: the attacker table and the STRIDE table.
 python -m pytest -q
 ```
 
-> "185 tests. Every attack has a test proving it is detected. Every role is tested against every route, and one test fails if a new route is added without a permission check."
+> "194 tests. Every attack has a test proving it is detected. Every role is tested against every route, and one test fails if a new route is added without a permission check."
 
 ## 6. Close with the limitations (1 minute)
 

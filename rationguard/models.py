@@ -120,3 +120,17 @@ class AuditLog(Base):
     after_json: Mapped[str] = mapped_column(Text)                  # value after
     prev_hash: Mapped[str] = mapped_column(String(64))
     entry_hash: Mapped[str] = mapped_column(String(64))
+
+
+class AnchorRecord(Base):
+    """Signed anchors, used ONLY when RG_ANCHOR_STORE=db (the hosted demo).
+
+    On a laptop the anchors live in a file outside the database, which is the
+    stronger design. A serverless host has no shared disk, so the hosted demo
+    keeps them here instead. Each line is still Ed25519-signed, so a forged
+    anchor is detected, but an insider who can delete rows here AND truncate
+    the log would not be caught. README "Limitations" explains this.
+    """
+    __tablename__ = "anchors"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    line: Mapped[str] = mapped_column(Text)

@@ -63,8 +63,8 @@ def test_anchors_are_written_periodically_outside_the_database(env, db_path):
         issue(browser, code, "wheat", 1)
     anchors = audit.read_anchors()
     assert len(anchors) > start
-    assert (env / "anchors.jsonl").exists() and "anchor" not in "".join(
-        r[0] for r in sql(db_path, "SELECT name FROM sqlite_master"))
+    assert (env / "anchors.jsonl").exists()
+    assert sql(db_path, "SELECT COUNT(*) FROM anchors")[0][0] == 0   # laptop mode: nothing in the DB
     newest = anchors[-1]
     assert audit_rows(db_path)[newest["audit_seq"] - 1]["entry_hash"] == newest["audit_hash"]
 

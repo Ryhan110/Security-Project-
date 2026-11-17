@@ -57,6 +57,11 @@ class Settings:
     session_secret: bytes     # derives CSRF tokens
     db_path: Path
     anchor_file: Path
+    # Optional remote database (Turso). Empty = use the local SQLite file.
+    database_url: str
+    database_auth_token: str
+    # Where signed anchors are kept: "file" (default) or "db" (hosted demo).
+    anchor_store: str
     signing_private_key: Path
     signing_public_key: Path
     anchor_every: int
@@ -78,6 +83,9 @@ def get_settings() -> Settings:
         session_secret=_hex_key("RG_SESSION_SECRET"),
         db_path=_path("RG_DB_PATH", "rationguard.db"),
         anchor_file=_path("RG_ANCHOR_FILE", "anchors/anchors.jsonl"),
+        database_url=os.environ.get("RG_DATABASE_URL", "").strip(),
+        database_auth_token=os.environ.get("RG_DATABASE_AUTH_TOKEN", "").strip(),
+        anchor_store=os.environ.get("RG_ANCHOR_STORE", "file").strip().lower(),
         signing_private_key=_path("RG_SIGNING_PRIVATE_KEY", "keys/anchor_ed25519_private.pem"),
         signing_public_key=_path("RG_SIGNING_PUBLIC_KEY", "keys/anchor_ed25519_public.pem"),
         anchor_every=max(1, int(os.environ.get("RG_ANCHOR_EVERY", "5"))),

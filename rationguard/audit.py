@@ -28,7 +28,7 @@ from . import clock
 from .config import get_settings
 from .crypto import GENESIS_HASH, canonical, hmac_hex, sha256_hex, sign
 from .db import new_session
-from .models import AuditLog, Transaction, User
+from .models import AnchorRecord, AuditLog, Transaction, User
 
 AUDIT_FIELDS = (
     "seq", "ts", "actor_id", "actor_username", "actor_role", "action",
@@ -111,12 +111,9 @@ def anchor_message(anchor: dict) -> bytes:
     return canonical("anchor:v1", [(name, anchor[name]) for name in ANCHOR_FIELDS])
 
 
-def read_anchors() -> list[dict]:
-    path = get_settings().anchor_file
-    if not path.exists():
-        return []
+def _parse(lines) -> list[dict]:
     anchors = []
-    for line in path.read_text().splitlines():
+    for line in lines:
         if not line.strip():
             continue
         try:
@@ -126,16 +123,33 @@ def read_anchors() -> list[dict]:
     return anchors
 
 
-def write_anchor() -> dict | None:
-    """Sign the current heads of both chains and append them to the anchor file."""
-    with new_session() as db:
-        audit_head = db.execute(
-            select(AuditLog).order_by(AuditLog.seq.desc()).limit(1)).scalar_one_or_none()
-        tx_head = db.execute(
-            select(Transaction).order_by(Transaction.seq.desc()).limit(1)).scalar_one_or_none()
+def _db_store() -> bool:
+    return get_settings().anchor_store == "db"
+
+
+def read_anchors(db: Session | None = None) -> list[dict]:
+    """Pass `db` when the caller already has a transaction open, so we read
+    through it instead of opening a second connection that would wait on it."""
+    if _db_store():
+        if db is not None:
+            return _parse(db.execute(select(AnchorRecord.line).order_by(AnchorRecord.id)).scalars().all())
+        with new_session() as own:
+            lines = own.execute(select(AnchorRecord.line).order_by(AnchorRecord.id)).scalars().all()
+            own.rollback()
+        return _parse(lines)
+    path = get_settings().anchor_file
+    if not path.exists():
+        return []
+    return _parse(path.read_text().splitlines())
+
+
+def _build_anchor(db: Session, previous: list[dict]) -> dict | None:
+    audit_head = db.execute(
+        select(AuditLog).order_by(AuditLog.seq.desc()).limit(1)).scalar_one_or_none()
+    tx_head = db.execute(
+        select(Transaction).order_by(Transaction.seq.desc()).limit(1)).scalar_one_or_none()
     if audit_head is None:
         return None
-    previous = read_anchors()
     last = previous[-1] if previous else None
     anchor = {
         "anchor_no": len(previous) + 1,
@@ -148,6 +162,29 @@ def write_anchor() -> dict | None:
         "prev_anchor_hash": sha256_hex(str(last.get("signature", "")).encode()) if last else GENESIS_HASH,
     }
     anchor["signature"] = sign(anchor_message(anchor))
+    return anchor
+
+
+def write_anchor() -> dict | None:
+    """Sign the current heads of both chains and append them to the anchor store."""
+    if _db_store():
+        # One write transaction (BEGIN IMMEDIATE), so two copies of the app
+        # running at once cannot both write "anchor #7".
+        with new_session() as db:
+            lines = db.execute(select(AnchorRecord.line).order_by(AnchorRecord.id)).scalars().all()
+            anchor = _build_anchor(db, _parse(lines))
+            if anchor is None:
+                db.rollback()
+                return None
+            db.add(AnchorRecord(line=json.dumps(anchor, sort_keys=True)))
+            db.commit()
+        return anchor
+
+    with new_session() as db:
+        anchor = _build_anchor(db, read_anchors())
+        db.rollback()
+    if anchor is None:
+        return None
     path = get_settings().anchor_file
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a") as handle:

@@ -112,23 +112,25 @@ python -m rationguard anchor
 python -m pytest
 ```
 
-185 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
+194 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
 
 - `tests/test_attacks.py` – every attack script has a test proving it is detected or blocked, including the exact field diff.
 - `tests/test_rbac.py` – every role against every route (60 cases), plus a test that **fails if any route has no permission check**.
 - `tests/test_auth.py` – Argon2, lockout, rate limit, cookie flags, CSRF, session fixation.
 - `tests/test_hygiene.py` – nothing secret is tracked by git; the app refuses placeholder keys.
 
-## Hosted demo on Vercel (optional, limited)
+## Hosted demo on Vercel (optional)
 
-The project can be put online on Vercel so people can click around, but it is a **reduced** version. Vercel runs the app as a short-lived serverless function with no permanent disk, and this project is built around a database *file*.
+The project can be put online on Vercel so people can click around. It is a **reduced** version of the laptop demo.
 
-| On your laptop | On Vercel |
+**Why it needs a shared database.** Vercel does not run one long-lived program. It starts several short-lived copies of the app, often at the same time, and each copy only has a temporary `/tmp` folder. If each copy kept its own SQLite file, you would log in on one copy and the next click, served by another copy, would send you back to the login page; a transaction saved on one copy would be missing on the next. So the hosted demo keeps its data in **Turso**, which is SQLite run as a shared online service. Every copy talks to the same database.
+
+| On your laptop | On Vercel + Turso |
 |---|---|
-| Data stays until you delete it | Database lives in `/tmp` and is re-seeded whenever a fresh copy of the function starts |
-| Attack scripts edit the file | No access to the file, so the insider-attack demo cannot run |
-| One process | Vercel may run several copies, each with its own database, so you can occasionally be logged out or see different data |
-| Rate limit per visitor address | All visitors share Vercel's proxy address, so the login rate limit is shared |
+| Database is a local SQLite file | Database is a Turso database shared by every copy of the app |
+| Signed anchors are in a file **outside** the database | Signed anchors are in an append-only `anchors` table **inside** the database (no shared disk exists) |
+| Attack scripts edit the file directly | No access to the file, so the insider-attack demo cannot run |
+| Rate limit per visitor address | Each copy keeps its own counter, and all visitors arrive through Vercel's proxy |
 
 Steps:
 
@@ -139,11 +141,14 @@ Steps:
    ```
 
    This writes `.env.vercel` (git-ignored) and prints the login password for the hosted demo users.
-2. On vercel.com choose **Add New → Project**, import this GitHub repository, and leave the build settings at their defaults.
-3. Open **Environment Variables**, click **Import .env** and choose `.env.vercel`.
-4. Click **Deploy**.
+2. Create a free database at [turso.tech](https://turso.tech). Pick the region nearest to your Vercel functions (Vercel's default is Washington D.C., so AWS us-east-1). Copy its URL (`libsql://…turso.io`) and create a token with read and write access.
+3. On vercel.com choose **Add New → Project**, import this GitHub repository, and leave the build settings at their defaults.
+4. Open **Environment Variables**, click **Import .env** and choose `.env.vercel`. Then add two more yourself:
+   - `RG_DATABASE_URL` = the Turso URL
+   - `RG_DATABASE_AUTH_TOKEN` = the Turso token
+5. Click **Deploy**. The first copy to start creates the tables and the fictional data; later copies find them there.
 
-`vercel_entry.py` is the entry point (named in `pyproject.toml`), and `.vercelignore` keeps tests, attack scripts and local secrets out of the upload. For the viva, use the local demo.
+`vercel_entry.py` is the entry point (named in `pyproject.toml`), and `.vercelignore` keeps tests, attack scripts and local secrets out of the upload. Without the two database variables the app still starts, but each copy uses its own `/tmp` database, which brings back the login problem. For the viva, use the local demo.
 
 ## Architecture
 
@@ -259,3 +264,4 @@ Where a choice could go two ways, the more secure one was taken. The cost is not
 13. **Fraud rules are simple fixed thresholds.** They produce hints for a human, with false positives and false negatives.
 14. **Software cannot see the physical world.** If a dealer records an honest-looking transaction for grain that was never handed over, no hash can know. Real systems add biometric or OTP confirmation by the household.
 15. **Masking is display-only.** Lists show `HH-***101`, but links still carry the full code in the URL.
+16. **The hosted demo keeps its anchors inside the database.** A serverless host has no shared disk, so on Vercel the signed anchors live in an append-only table in the same Turso database. A forged anchor is still caught by its signature, but someone who could delete anchor rows *and* cut the log short would not be. The laptop version keeps anchors in a separate file.

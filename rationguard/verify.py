@@ -214,7 +214,7 @@ class _Run:
 
         # Missing sequence numbers. We know how long the chain should be from
         # three independent places: valid rows, log snapshots, and anchors.
-        anchored = [a.get("tx_seq", 0) for a in audit.read_anchors() if _anchor_signature_ok(a)]
+        anchored = [a.get("tx_seq", 0) for a in audit.read_anchors(self.db) if _anchor_signature_ok(a)]
         highest = max([s for s, ok in valid.items() if ok] + list(snap_by_seq) + anchored + [0])
         for seq in range(1, highest + 1):
             if seq in self.tx_by_seq or seq in moved_from:
@@ -241,7 +241,7 @@ class _Run:
     def check_anchors(self) -> None:
         check = CheckResult("anchors")
         self.report.checks.append(check)
-        anchors = audit.read_anchors()
+        anchors = audit.read_anchors(self.db)
         if not anchors:
             if self.audit_by_seq:
                 self.add(check, Finding("anchors", ANCHOR_INVALID, "anchor file",
