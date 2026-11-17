@@ -141,7 +141,7 @@ Steps:
    ```
 
    This writes `.env.vercel` (git-ignored) and prints the login password for the hosted demo users.
-2. Create a free database at [turso.tech](https://turso.tech). Pick the region nearest to your Vercel functions (Vercel's default is Washington D.C., so AWS us-east-1). Copy its URL (`libsql://…turso.io`) and create a token with read and write access.
+2. Create a free database at [turso.tech](https://turso.tech). Pick a region and set Vercel's function region to match in `vercel.json` (this project uses Mumbai: Turso `aws-ap-south-1`, Vercel `bom1`). A mismatch makes every page slow, because each page makes many database requests. Copy its URL (`libsql://…turso.io`) and create a token with read and write access.
 3. On vercel.com choose **Add New → Project**, import this GitHub repository, and leave the build settings at their defaults.
 4. Open **Environment Variables**, click **Import .env** and choose `.env.vercel`. Then add two more yourself:
    - `RG_DATABASE_URL` = the Turso URL
