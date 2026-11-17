@@ -1,13 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Auditor dashboard</h1>
+<section class="page-hero security-hero">
+  <div><p class="eyebrow">Security operations center</p><h1>Threat monitoring dashboard</h1><p>Live evidence from protected records, signed anchors, and the audit chain.</p></div>
+  <form method="post" action="/auditor/verify" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="button-glow">Run full verification</button></form>
+</section>
+<section class="metric-grid" aria-label="Security status summary">
+  <article class="metric integrity {% if report.ok %}healthy{% else %}danger{% endif %}"><span>Integrity state</span><strong>{% if report.ok %}SECURE{% else %}AT RISK{% endif %}</strong><small>{% if report.ok %}All checks passing{% else %}{{ report.findings|length }} finding(s) require review{% endif %}</small></article>
+  <article class="metric critical"><span>Critical alerts</span><strong>{{ severity_counts.CRITICAL }}</strong><small>Immediate investigation</small></article>
+  <article class="metric high"><span>High-risk alerts</span><strong>{{ severity_counts.HIGH }}</strong><small>Priority review</small></article>
+  <article class="metric"><span>Signed anchors</span><strong>{{ anchors }}</strong><small>External proof points</small></article>
+</section>
 <form method="post" action="/auditor/verify" class="inline">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <button type="submit">Run verification and record it in the audit log</button>
+  <button type="submit" class="button-secondary">Verify &amp; record audit evidence</button>
 </form>
 {% if recorded %}<p class="banner good">Verification run recorded in the audit log.</p>{% endif %}
 
-<h2>Integrity verification
+<h2 class="section-title">Integrity verification
   {% if report.ok %}<span class="tag good">ALL GREEN</span>{% else %}<span class="tag bad">TAMPERING DETECTED</span>{% endif %}
 </h2>
 <table>
@@ -36,7 +45,8 @@
 {% endfor %}
 {% endif %}
 
-<h2>Alerts ({{ alerts|length }})</h2>
+<h2 class="section-title">Alerts <span class="count-badge">{{ alerts|length }}</span></h2>
+<p class="muted">Alerts are derived from tamper-evident evidence—not stored as deletable records.</p>
 <table>
   <tr><th>Severity</th><th>Type</th><th>When (UTC)</th><th>What</th></tr>
   {% for a in alerts %}

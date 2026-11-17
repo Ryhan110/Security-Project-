@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RationGuard</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
 <header>
-  <strong>RationGuard</strong> <span class="muted">simulated ration portal &middot; fictional data</span>
+  <a class="brand" href="/"><span class="brand-mark">RG</span><span>RationGuard</span></a>
+  <span class="environment-pill"><i></i> SECURE DEMO</span>
+  <span class="muted">simulated ration portal &middot; fictional data</span>
   {% if user %}
   <nav>
     {% if user.role == "dealer" %}<a href="/dealer">Issue rations</a>{% endif %}
     {% if user.role == "admin" %}<a href="/admin/households">Households</a><a href="/admin/changes">Change requests</a>{% endif %}
     {% if user.role == "auditor" %}<a href="/auditor">Dashboard</a><a href="/auditor/transactions">Transactions</a><a href="/auditor/audit-log">Audit log</a><a href="/admin/changes">Change requests</a>{% endif %}
     {% if user.role == "household" %}<a href="/">My history</a>{% endif %}
-    <span class="muted">{{ user.username }} ({{ user.role }})</span>
+    <span class="user-chip"><span class="user-dot"></span>{{ user.username }} <small>{{ user.role }}</small></span>
     <form method="post" action="/logout" class="inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit">Log out</button>
@@ -24,6 +27,7 @@
   {% endif %}
 </header>
 <main>
+  {% if user %}<div class="security-strip"><span class="pulse-dot"></span><strong>Protection active</strong><span>Encrypted records</span><span>Append-only audit trail</span><span>Role-based access</span></div>{% endif %}
   {% if demo_banner %}<p class="banner warn">{{ demo_banner }}</p>{% endif %}
   {% if error %}<p class="banner bad">{{ error }}</p>{% endif %}
   {% if message %}<p class="banner good">{{ message }}</p>{% endif %}

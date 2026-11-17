@@ -29,6 +29,7 @@ RAPID_REPEAT_WINDOW = timedelta(minutes=5)
 DEALER_MAX_HOUSEHOLDS_PER_HOUR = 20
 DENIED_BURST_COUNT, DENIED_BURST_WINDOW = 5, timedelta(minutes=10)
 FAILED_LOGIN_COUNT, FAILED_LOGIN_WINDOW = 5, timedelta(minutes=15)
+CSRF_FAILURE_COUNT, CSRF_FAILURE_WINDOW = 3, timedelta(minutes=10)
 RAISE_THEN_ISSUE_WINDOW = timedelta(hours=24)
 OFF_HOURS_ACTIONS = ("TRANSACTION_CREATED", "CHANGE_PROPOSED", "CHANGE_APPROVED", "CHANGE_REJECTED")
 
@@ -128,6 +129,20 @@ def compute_alerts(db: Session, report: Report | None = None) -> list[Alert]:
         for first, last, size in _bursts(times, FAILED_LOGIN_COUNT, FAILED_LOGIN_WINDOW):
             alerts.append(Alert(MEDIUM, "REPEATED_FAILED_LOGINS", clock.to_text(last),
                                 f"{size} failed logins from address {ip}",
+                                f"between {clock.to_text(first)[:19]} and {clock.to_text(last)[:19]}"))
+
+    csrf_failures: dict[str, list] = defaultdict(list)
+    for entry in by_action["ACCESS_DENIED"]:
+        try:
+            reason = json.loads(entry.after_json).get("reason", "")
+        except (TypeError, json.JSONDecodeError):
+            reason = ""
+        if reason == "CSRF check failed":
+            csrf_failures[entry.ip].append(clock.parse(entry.ts))
+    for ip, times in csrf_failures.items():
+        for first, last, size in _bursts(times, CSRF_FAILURE_COUNT, CSRF_FAILURE_WINDOW):
+            alerts.append(Alert(HIGH, "CSRF_PROBE_BURST", clock.to_text(last),
+                                f"{size} invalid form-token attempts from address {ip}",
                                 f"between {clock.to_text(first)[:19]} and {clock.to_text(last)[:19]}"))
 
     # ---- D. Off-hours activity (one alert per person per day) ----

@@ -64,11 +64,16 @@ app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+    response.headers["Content-Security-Policy"] = ("default-src 'self'; base-uri 'self'; form-action 'self'; "
+                                                  "frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'")
     response.headers["X-Frame-Options"] = "DENY"                 # no clickjacking
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"          # do not leak HH codes in URLs
     response.headers["Cache-Control"] = "no-store"               # private pages are not cached
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    if get_settings().cookie_secure:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 
@@ -328,8 +333,10 @@ def _auditor_page(request: Request, user: User, db: Session, recorded: bool = Fa
     if recorded:
         record_run(db, report, actor=user, ip=client_ip(request))
     alerts = detection.compute_alerts(db, report)
+    severity_counts = {level: sum(a.severity == level for a in alerts)
+                       for level in ("CRITICAL", "HIGH", "MEDIUM", "LOW")}
     return render(request, "auditor.html", user, report=report, alerts=alerts, recorded=recorded,
-                  anchors=len(audit.read_anchors()))
+                  anchors=len(audit.read_anchors()), severity_counts=severity_counts)
 
 
 @app.get("/auditor", response_class=HTMLResponse)
