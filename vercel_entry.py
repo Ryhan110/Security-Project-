@@ -50,12 +50,16 @@ def _bootstrap() -> None:
     seeding happen inside ONE write transaction (BEGIN IMMEDIATE), so only the
     first copy seeds; the others then find the users already there.
     """
+    started = time.monotonic()
     init_db()
+    print(f"[rationguard] tables ready in {time.monotonic() - started:.1f}s", file=sys.stderr, flush=True)
     with new_session() as db:
         empty = db.execute(select(func.count()).select_from(User)).scalar_one() == 0
         if empty:
             from rationguard.seed import seed
             seed(db)            # commits the same transaction
+            print(f"[rationguard] demo data created in {time.monotonic() - started:.1f}s",
+                  file=sys.stderr, flush=True)
         else:
             db.rollback()
 

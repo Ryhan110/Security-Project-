@@ -160,3 +160,44 @@ def test_vercel_entry_boots_seeds_once_and_shares_state(env, monkeypatch):
     db.reset_engine()
     monkeypatch.undo()
     get_settings.cache_clear()
+
+
+def test_concurrent_requests_do_not_deadlock_in_hosted_mode(hosted):
+    """With one database connection per copy, parallel requests must queue
+    and all succeed, never wait for each other in a circle (a deadlock)."""
+    import concurrent.futures as cf
+    import time
+    dealer = new_client("dealer1")
+    started = time.monotonic()
+    with cf.ThreadPoolExecutor(8) as pool:
+        codes = list(pool.map(lambda _: dealer.get("/dealer").status_code, range(24)))
+    assert codes == [200] * 24
+    assert time.monotonic() - started < 30
+    with cf.ThreadPoolExecutor(4) as pool:
+        posts = list(pool.map(lambda kg: issue(dealer, "HH-000104", "wheat", 1).status_code, range(4)))
+    assert posts == [201] * 4
+    assert verify().ok
+
+
+def test_hosted_engine_uses_a_single_connection(hosted):
+    from rationguard.db import get_engine
+    assert get_engine().pool.size() == 1
+
+
+def test_engine_for_a_real_turso_address_builds_with_one_connection(monkeypatch):
+    """Regression: a remote address has no file name, and SQLAlchemy then
+    picked a pool type that rejected our settings, so every start failed.
+    Building the engine does not connect, so this needs no network."""
+    from sqlalchemy.pool import QueuePool
+    from rationguard import db
+    from rationguard.config import get_settings
+    monkeypatch.setenv("RG_DATABASE_URL", "libsql://demo-db-example.aws-ap-south-1.turso.io")
+    monkeypatch.setenv("RG_DATABASE_AUTH_TOKEN", "not-a-real-token")
+    get_settings.cache_clear()
+    db.reset_engine()
+    engine = db.get_engine()
+    assert isinstance(engine.pool, QueuePool) and engine.pool.size() == 1
+    assert engine.url.host == "demo-db-example.aws-ap-south-1.turso.io"
+    db.reset_engine()
+    monkeypatch.undo()
+    get_settings.cache_clear()

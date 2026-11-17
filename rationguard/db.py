@@ -15,6 +15,7 @@ from typing import Iterator
 
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import DeclarativeBase, Session
 
 from .config import get_settings
@@ -58,11 +59,49 @@ def engine_url_and_args() -> tuple[str, dict]:
              "check_same_thread": False})
 
 
+def _end_transactions_explicitly(engine: Engine) -> None:
+    """Make COMMIT and ROLLBACK real SQL statements for the Turso driver.
+
+    We open every transaction ourselves with BEGIN IMMEDIATE (see below).
+    The driver's own commit()/rollback() methods do not always send anything
+    to a remote database for a transaction they did not start, which would
+    leave the write lock held and make every other copy of the app wait.
+    Sending the statements ourselves is correct in every case.
+    """
+    dialect = engine.dialect
+
+    def do_commit(dbapi_connection):
+        dbapi_connection.execute("COMMIT")
+
+    def do_rollback(dbapi_connection):
+        try:
+            dbapi_connection.execute("ROLLBACK")
+        except Exception as error:   # nothing to roll back: that is fine
+            if "no transaction" not in str(error).lower():
+                raise
+
+    dialect.do_commit = do_commit
+    dialect.do_rollback = do_rollback
+
+
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
         url, args = engine_url_and_args()
-        engine = create_engine(url, connect_args=args, pool_pre_ping=url.startswith("sqlite+libsql"))
+        remote = url.startswith("sqlite+libsql")
+        # Turso driver: ONE connection per running copy of the app. While the
+        # driver waits on the network it freezes the whole Python process, so a
+        # second thread waiting for the write lock would freeze the thread that
+        # holds it, and both would stall until Turso cancels the transaction.
+        # With one connection, other requests queue up in Python instead.
+        # QueuePool must be named: for an address with no file name SQLAlchemy
+        # would otherwise choose a per-thread pool that ignores these limits.
+        pool_args = ({"poolclass": QueuePool, "pool_size": 1, "max_overflow": 0, "pool_timeout": 60}
+                     if remote else {})
+        engine = create_engine(url, connect_args=args, pool_pre_ping=remote, **pool_args)
+
+        if url.startswith("sqlite+libsql"):
+            _end_transactions_explicitly(engine)
 
         @event.listens_for(engine, "connect")
         def _on_connect(dbapi_connection, _record):
