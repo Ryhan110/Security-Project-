@@ -88,6 +88,8 @@ def compute_alerts(db: Session, report: Report | None = None) -> list[Alert]:
     simple = {
         "ROLE_CHANGED": (HIGH, "ROLE_CHANGE", "Role changed for user {object_id}"),
         "ACCOUNT_LOCKED": (MEDIUM, "ACCOUNT_LOCKED", "Account {object_id} locked after repeated failed logins"),
+        "ACCOUNT_UNLOCKED": (MEDIUM, "ACCOUNT_UNLOCKED", "{actor} unlocked account {object_id} before the lock expired"),
+        "SELF_UNLOCK_BLOCKED": (HIGH, "SELF_UNLOCK_ATTEMPT", "{actor} tried to unlock their own account"),
         "SELF_APPROVAL_BLOCKED": (HIGH, "SELF_APPROVAL_ATTEMPT",
                                   "{actor} tried to approve their own change request #{object_id}"),
         "CHANGE_BLOCKED_TAMPERED_REQUEST": (CRITICAL, "TAMPERED_CHANGE_REQUEST",

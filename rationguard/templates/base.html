@@ -15,7 +15,7 @@
   {% if user %}
   <nav>
     {% if user.role == "dealer" %}<a href="/dealer">Issue rations</a>{% endif %}
-    {% if user.role == "admin" %}<a href="/admin/households">Households</a><a href="/admin/changes">Change requests</a>{% endif %}
+    {% if user.role == "admin" %}<a href="/admin/households">Households</a><a href="/admin/changes">Change requests</a><a href="/admin/accounts">Accounts</a>{% endif %}
     {% if user.role == "auditor" %}<a href="/auditor">Dashboard</a><a href="/auditor/transactions">Transactions</a><a href="/auditor/audit-log">Audit log</a><a href="/admin/changes">Change requests</a>{% endif %}
     {% if user.role == "household" %}<a href="/">My history</a>{% endif %}
     <span class="user-chip"><span class="user-dot"></span>{{ user.username }} <small>{{ user.role }}</small></span>

@@ -21,6 +21,8 @@ ROUTES = [
     ("POST", "/admin/changes", {"admin"}),
     ("POST", "/admin/changes/1/approve", {"admin"}),
     ("POST", "/admin/changes/1/reject", {"admin"}),
+    ("GET", "/admin/accounts", {"admin"}),
+    ("POST", "/admin/accounts/hh000112/unlock", {"admin"}),
     ("GET", "/auditor", {"auditor"}),
     ("POST", "/auditor/verify", {"auditor"}),
     ("GET", "/auditor/audit-log", {"auditor"}),
@@ -73,7 +75,7 @@ def test_every_route_is_protected_or_explicitly_public():
 
 def test_the_route_matrix_above_covers_every_route():
     from rationguard.app import PUBLIC_PATHS, app
-    declared = {(m, p.replace(OWN, "{hh_code}").replace("/1/", "/{request_id}/")) for m, p, _ in ROUTES}
+    declared = {(m, p.replace(OWN, "{hh_code}").replace("/1/", "/{request_id}/").replace("/hh000112/", "/{username}/")) for m, p, _ in ROUTES}
     actual = {(method, route.path) for route in app.routes if isinstance(route, APIRoute)
               and route.path not in PUBLIC_PATHS for method in route.methods}
     assert actual == declared

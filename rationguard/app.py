@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import audit, clock, detection, households as hh_service, security, transactions as tx_service
+from . import accounts, audit, clock, detection, households as hh_service, security, transactions as tx_service
 from .config import get_settings
 from .crypto import decrypt, mask_id, mask_phone
 from .db import get_db, new_session
@@ -270,6 +270,33 @@ def admin_households(request: Request, user: User = Depends(require(Perm.HOUSEHO
     view = [{"masked": mask_id(h.hh_code), "hh_code": h.hh_code, "family_size": h.family_size,
              "shop_id": h.shop_id} for h in rows]
     return render(request, "admin_households.html", user, households=view)
+
+
+def _accounts_page(request: Request, user: User, db: Session, status_code: int = 200,
+                   error: str | None = None, message: str | None = None):
+    users = db.execute(select(User).order_by(User.role, User.username)).scalars().all()
+    # Only what an admin needs to manage lockouts: no password hashes, no HMACs.
+    view = [{"username": u.username, "role": u.role, "locked": accounts.is_locked(u),
+             "locked_until": (u.locked_until or "")[:19], "failed": u.failed_logins,
+             "me": u.id == user.id} for u in users]
+    return render(request, "accounts.html", user, status_code=status_code, accounts=view,
+                  error=error, message=message)
+
+
+@app.get("/admin/accounts", response_class=HTMLResponse)
+def admin_accounts(request: Request, user: User = Depends(require(Perm.ACCOUNT_MANAGE)),
+                   db: Session = Depends(get_db)):
+    return _accounts_page(request, user, db)
+
+
+@app.post("/admin/accounts/{username}/unlock", response_class=HTMLResponse)
+def admin_unlock(username: str, request: Request, user: User = Depends(require(Perm.ACCOUNT_MANAGE)),
+                 db: Session = Depends(get_db)):
+    try:
+        target = accounts.unlock_user(db, admin=user, username=username, ip=client_ip(request))
+    except accounts.UnlockError as error:
+        return _accounts_page(request, user, db, error.status, error=error.message)
+    return _accounts_page(request, user, db, message=f"{target.username} unlocked. The auditor has been alerted.")
 
 
 @app.get("/admin/changes", response_class=HTMLResponse)

@@ -112,7 +112,7 @@ python -m rationguard anchor
 python -m pytest
 ```
 
-194 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
+214 tests. Each test gets its own copy of a seeded database and throw-away keys. Highlights:
 
 - `tests/test_attacks.py` – every attack script has a test proving it is detected or blocked, including the exact field diff.
 - `tests/test_rbac.py` – every role against every route (60 cases), plus a test that **fails if any route has no permission check**.
@@ -233,7 +233,7 @@ Where a choice could go two ways, the more secure one was taken. The cost is not
 | **Three separate HMAC keys** (transactions, audit log, other records) | Leaking one key does not break the others | More keys to manage |
 | **Alerts are not stored**; they are recomputed from the audit log | A stored alert is a row an insider could delete | Recomputing costs time on a large log |
 | **Server-side sessions** (random token, only its hash stored) instead of JWT | Logout and tamper-kill really end the session; DB thieves cannot reuse tokens | One DB lookup per request |
-| **Account lockout** after 5 failures | Stops password guessing | Someone can lock a victim out for 15 minutes on purpose. Mitigated by per-IP rate limit and an alert |
+| **Account lockout** after 5 failures | Stops password guessing | Someone can lock a victim out for 15 minutes on purpose. Mitigated by per-IP rate limit, an alert, and an admin **Accounts** page that can end a lock early (audit-logged, alerts the auditor, never your own account) |
 | **Over-quota is blocked**; duplicates are only flagged | Over-quota is never legitimate; collecting a quota in two visits is | Flags need a human to review |
 | Entitlement **month comes from the server clock**, not the form | No back-dating into a month with spare quota | Late entry for last month is impossible |
 | Issue is **refused if the household's HMAC fails** | A quota raised by a DB edit cannot be cashed in | One tampered row blocks that household until it is fixed |

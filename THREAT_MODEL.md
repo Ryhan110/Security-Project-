@@ -131,7 +131,7 @@ STRIDE is a checklist of six kinds of threat:
 | # | Threat | Who | Control | Prevents / Detects |
 |---|---|---|---|---|
 | D1 | Flood the login page | A5 | C2 per-IP rate limit | Prevents (partly) |
-| D2 | Lock out a victim by failing their login on purpose | A5 | Lockout is temporary (15 min); C18 alert. **Accepted trade-off**, see README | Detects |
+| D2 | Lock out a victim by failing their login on purpose | A5 | Lockout is temporary (15 min); an admin can unlock early (audit-logged, never their own account, alerts the auditor); C18 alert | Detects + recovers |
 | D3 | Destroy the database file | A3 | Out of scope (needs backups). Anchors would show a restored old copy is stale | Not prevented |
 
 ### Elevation of privilege

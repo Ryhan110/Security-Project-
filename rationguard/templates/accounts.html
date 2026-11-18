@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Accounts</h1>
+<p class="muted">After 5 wrong passwords an account is locked for 15 minutes. An admin can end a lock early
+  (for example after checking with the person by phone). Every unlock is written to the audit log and alerts the auditor.
+  You cannot unlock your own account.</p>
+<table>
+  <tr><th>Username</th><th>Role</th><th>Status</th><th>Failed attempts</th><th></th></tr>
+  {% for a in accounts %}
+  <tr>
+    <td>{{ a.username }}{% if a.me %} <span class="muted">(you)</span>{% endif %}</td>
+    <td>{{ a.role }}</td>
+    <td>{% if a.locked %}<span class="tag bad">LOCKED</span> <span class="muted">until {{ a.locked_until }} UTC</span>{% else %}<span class="tag good">ACTIVE</span>{% endif %}</td>
+    <td>{{ a.failed }}</td>
+    <td>
+      {% if a.locked and not a.me %}
+      <form method="post" action="/admin/accounts/{{ a.username }}/unlock" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">Unlock</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

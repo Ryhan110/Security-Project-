@@ -38,6 +38,7 @@ class Perm(str, Enum):
     AUDIT_VIEW = "audit:view"
     VERIFY_RUN = "verify:run"
     ALERTS_VIEW = "alerts:view"
+    ACCOUNT_MANAGE = "account:manage"       # see account lock status, unlock accounts
 
 
 # The whole access policy in one table. If a (role, permission) pair is not
@@ -46,7 +47,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[Perm]] = {
     "household": frozenset({Perm.DASHBOARD, Perm.HISTORY_VIEW, Perm.HOUSEHOLD_VIEW}),
     "dealer": frozenset({Perm.DASHBOARD, Perm.TX_CREATE, Perm.TX_VIEW_SHOP, Perm.HISTORY_VIEW}),
     "admin": frozenset({Perm.DASHBOARD, Perm.HOUSEHOLD_LIST, Perm.HOUSEHOLD_VIEW,
-                        Perm.CHANGE_PROPOSE, Perm.CHANGE_DECIDE, Perm.CHANGE_LIST}),
+                        Perm.CHANGE_PROPOSE, Perm.CHANGE_DECIDE, Perm.CHANGE_LIST,
+                        Perm.ACCOUNT_MANAGE}),
     # The auditor can look and verify, but has no permission that changes data.
     "auditor": frozenset({Perm.DASHBOARD, Perm.HISTORY_VIEW, Perm.TX_VIEW_ALL, Perm.CHANGE_LIST,
                           Perm.AUDIT_VIEW, Perm.VERIFY_RUN, Perm.ALERTS_VIEW}),
